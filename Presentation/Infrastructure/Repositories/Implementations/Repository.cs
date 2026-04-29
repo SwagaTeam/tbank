@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Domain.Entities;
 using Infrastructure.Repositories.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,3 +73,14 @@ public class UserRepository(AppDbContext context) : Repository<User>(context), I
 
 public class LoyaltyProgramsRepository(AppDbContext context) 
     : Repository<LoyaltyPrograms>(context), ILoyaltyProgramsRepository;
+
+public class TransactionRepository(AppDbContext context): Repository<Transaction>(context), ITransactionRepository
+{
+    public async Task<ICollection<Transaction>> GetByAccountIdsAsync(IEnumerable<int> accountIds)
+    {
+        return await DbSet
+            .Where(t => accountIds.Contains(t.AccountId))
+            .OrderByDescending(t => t.TransactionDate)
+            .ToListAsync();
+    }
+}

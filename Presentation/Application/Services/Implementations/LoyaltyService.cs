@@ -11,7 +11,8 @@ internal class LoyaltyService(
     ILoyaltyHistoryRepository historyRepository,
     IRepository<LoyaltyPrograms> programRepository,
     IOfferRepository offerRepository,
-    IUserService userService)
+    IUserService userService,
+    ITransactionRepository transactionRepository)
     : ILoyaltyService
 {
     public async Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(int userId)
@@ -85,24 +86,30 @@ internal class LoyaltyService(
     public async Task<ShadowPromptContext> GetShadowContext(int userId)
     {
         var userAccounts = await accountRepository.GetByUserIdAsync(userId);
-        var user = await userService.GetUser(userId);
+        var user = await userService.GetUserInternal(userId);
+
         if (user is null)
         {
             throw new UnauthorizedAccessException();
         }
-        
-        var accountIds = userAccounts.Select(a => a.Id);
-        var userHistory = await historyRepository.GetByAccountIdsAsync(accountIds);
-        var allPrograms = await programRepository.GetAllAsync();
-        var offer = await offerRepository.GetPartnersAsync(user.FinancialSegment);
+
+        var accountIds = userAccounts.Select(a => a.Id).ToList();
+
+        var historyTask = historyRepository.GetByAccountIdsAsync(accountIds);
+        var transactionsTask = transactionRepository.GetByAccountIdsAsync(accountIds);
+        var programsTask = programRepository.GetAllAsync();
+        var offersTask = offerRepository.GetPartnersAsync(user.FinancialSegment);
+
+        await Task.WhenAll(historyTask, transactionsTask, programsTask, offersTask);
 
         return new ShadowPromptContext
         (
             User: user,
             CurrentAccount: userAccounts,
-            RecentHistory: userHistory,
-            AvailablePrograms: allPrograms,
-            RelevantOffers: offer
+            RecentHistory: await historyTask,
+            Transactions: await transactionsTask,
+            AvailablePrograms: await programsTask,
+            RelevantOffers: await offersTask
         );
     }
 

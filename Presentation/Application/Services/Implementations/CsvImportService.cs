@@ -37,25 +37,52 @@ public class CsvImportService(IServiceProvider serviceProvider) : ICsvImportServ
 
         if (records.Count <= 0) return records.Count;
 
-        if (typeof(T) == typeof(Transaction))
+        if (typeof(T) == typeof(LoyaltyHistory))
         {
-            var random = new Random();
-            var categories = Enum.GetValues<MerchantCategory>();
-            foreach (var record in records.Cast<Transaction>())
-            {
-                // Если в CSV нет категории, рандомим её
-                if (record.Category == default)
-                    record.Category = categories[random.Next(categories.Length)];
-
-                // Рандомим, является ли это партнером (например, 20% шанс)
-                record.IsPartner = random.Next(100) < 20;
-            }
+            await GenerateTransactionsFromHistory(records.Cast<LoyaltyHistory>());
         }
 
         await repository.AddRangeAsync(records);
         await repository.SaveChangesAsync();
 
         return records.Count;
+    }
+
+    private async Task GenerateTransactionsFromHistory(IEnumerable<LoyaltyHistory> historyRecords)
+    {
+        var transactionRepo = serviceProvider.GetRequiredService<ITransactionRepository>();
+        var random = new Random();
+        var categories = Enum.GetValues<MerchantCategory>();
+        var simulatedTransactions = new List<Transaction>();
+
+        foreach (var history in historyRecords)
+        {
+            // На одну выплату кешбэка генерируем 2-5 транзакций
+            var transactionsCount = random.Next(2, 6);
+
+            for (int i = 0; i < transactionsCount; i++)
+            {
+                // Имитируем, что средний кешбэк — это 1-5% от покупки
+                // Поэтому сумма транзакции = (Кешбэк / Кол-во транзакций) * Рандомный множитель
+                var partOfCashback = (decimal)history.CashbackAmount / transactionsCount;
+                var multiplier = random.Next(20, 101); // множитель от x20 до x100
+
+                var transaction = new Transaction
+                {
+                    AccountId = history.AccountId,
+                    Amount = Math.Round(partOfCashback * multiplier, 2),
+                    // Дата транзакции — за 1-7 дней до выплаты кешбэка
+                    TransactionDate = history.PayoutDate.AddDays(-random.Next(1, 8)),
+                    Category = categories[random.Next(categories.Length)],
+                    IsPartner = random.Next(100) < 15 // 15% шанс, что это партнер
+                };
+
+                simulatedTransactions.Add(transaction);
+            }
+        }
+
+        await transactionRepo.AddRangeAsync(simulatedTransactions);
+        await transactionRepo.SaveChangesAsync();
     }
 }
 

@@ -5,6 +5,6 @@ namespace Application.Services.Abstractions
 {
     public interface ICrossSellService
     {
-       IEnumerable<CrossSellProduct> GetOffers(FinancialSegment segment);
+        Task<IEnumerable<CrossSellProduct>> GetPersonalizedOffersAsync(int userId);
     }
 }
