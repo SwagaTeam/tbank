@@ -2,6 +2,7 @@
 using Application.Models;
 using Application.Services.Abstractions;
 using Domain;
+using Domain.Enums;
 using Infrastructure.Repositories.Abstractions;
 
 namespace Application.Services.Implementations;
@@ -21,49 +22,48 @@ internal class LoyaltyService(
         if (userAccounts.Count == 0)
             return new LoyaltyAnalyticsDto();
 
-        var accountIds = userAccounts.Select(a => a.AccountId);
+        var accountIds = userAccounts.Select(a => a.AccountId).ToList();
         var userHistory = await historyRepository.GetByAccountIdsAsync(accountIds);
         var allPrograms = await programRepository.GetAllAsync();
         var transactions = await transactionRepository.GetByAccountIdsAsync(accountIds);
 
         var result = new LoyaltyAnalyticsDto();
+        var culture = new CultureInfo("ru-RU");
+        var now = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        // 1. Мапим балансы и историю (старая логика)
         MapBalances(result, userAccounts, userHistory, allPrograms);
         result.MonthlyHistory = MapMonthlyHistory(userAccounts, userHistory, allPrograms);
 
-        var now = DateOnly.FromDateTime(DateTime.UtcNow);
-
-        // 2. Сколько заработали за ТЕКУЩИЙ месяц
         result.CurrentMonthEarned = userHistory
             .Where(h => h.PayoutDate.Month == now.Month && h.PayoutDate.Year == now.Year)
             .Sum(h => h.CashbackAmount);
 
-        // 3. Данные для графика за 9 месяцев (Labels + Values)
-        var culture = new CultureInfo("ru-RU");
         for (var i = 8; i >= 0; i--)
         {
             var monthDate = now.AddMonths(-i);
             var label = monthDate.ToString("MMMM", culture);
-            var value = (decimal)userHistory
+            var value = userHistory
                 .Where(h => h.PayoutDate.Month == monthDate.Month && h.PayoutDate.Year == monthDate.Year)
                 .Sum(h => h.CashbackAmount);
 
             result.Last9MonthsLabels.Add(label);
             result.Last9MonthsValues.Add(value);
         }
+        
+        var firstDayOfCurrentMonth = new DateOnly(now.Year, now.Month, 1);
+        var lastMonthDate = firstDayOfCurrentMonth.AddMonths(-1);
+        
+        var analysisStart = new DateOnly(lastMonthDate.Year, lastMonthDate.Month, 1);
+        var analysisEnd = firstDayOfCurrentMonth.AddDays(-1);
 
-        // 4. Прогноз на 3 месяца (берем средние траты за 30 дней и считаем 1% кешбэка)
-        var thirtyDaysAgo = now.AddDays(-30);
-        var lastMonthSpend = transactions
-            .Where(t => t.TransactionDate >= thirtyDaysAgo)
-            .Sum(t => t.Amount);
+        var lastFullMonthTransactions = transactions
+            .Where(t => t.TransactionDate >= analysisStart && t.TransactionDate <= analysisEnd)
+            .ToList();
 
-        var averageDailySpend = lastMonthSpend / 30m;
-        result.PredictedBenefit3Months = Math.Round(averageDailySpend * 90m * 0.01m, 2);
+        var lastMonthTotalSpend = lastFullMonthTransactions.Sum(t => t.Amount);
+        result.PredictedBenefit3Months = Math.Round(lastMonthTotalSpend * 3 * 0.01m, 2);
 
-        // 5. Анализ топ-категории для рекомендации
-        var topCategory = transactions
+        var topCategory = lastFullMonthTransactions
             .GroupBy(t => t.Category)
             .Select(g => new { Category = g.Key, Total = g.Sum(t => t.Amount) })
             .OrderByDescending(x => x.Total)
@@ -71,12 +71,11 @@ internal class LoyaltyService(
 
         if (topCategory != null)
         {
-            result.RecommendedCategoryName = topCategory.Category.ToString();
-            result.PotentialCategorySavings = Math.Round(topCategory.Total * 0.05m, 2); // 5% повышенный кешбэк
+            result.RecommendedCategoryName = topCategory.Category.MapCategoryToRussian();
+            result.PotentialCategorySavings = Math.Round(topCategory.Total * 0.05m, 2); 
         }
 
-        // 6. Траты у партнеров
-        result.TotalPartnerSpend = transactions
+        result.TotalPartnerSpend = lastFullMonthTransactions
             .Where(t => t.IsPartner)
             .Sum(t => t.Amount);
 

@@ -109,7 +109,7 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
         if (string.IsNullOrEmpty(content))
             throw new Exception("OpenRouter returned success, but message content is empty.");
 
-        try 
+        try
         {
             return JsonSerializer.Deserialize<ShadowRecommendationResponse>(content, _jsonOptions);
         }
@@ -120,31 +120,17 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
     }
 
     public async Task<string?> GetChatResponse(int userId, string userMessage)
-{
-    var context = await loyaltyService.GetShadowContext(userId);
-
-    var categoryNames = new Dictionary<MerchantCategory, string>
     {
-        { MerchantCategory.Supermarkets, "Супермаркеты" },
-        { MerchantCategory.Pharmacy, "Аптеки" },
-        { MerchantCategory.Restaurants, "Рестораны" },
-        { MerchantCategory.GasStations, "АЗС" },
-        { MerchantCategory.Electronics, "Электроника" },
-        { MerchantCategory.Clothes, "Одежда" }
-    };
+        var context = await loyaltyService.GetShadowContext(userId);
 
-    var transactionStats = context.Transactions
-        .GroupBy(t => t.Category)
-        .Select(g => 
-        {
-            var name = categoryNames.TryGetValue(g.Key, out var rusName) ? rusName : g.Key.ToString();
-            return $"{name}: {g.Sum(t => t.Amount)} руб.";
-        });
+        var transactionStats = context.Transactions
+            .GroupBy(t => t.Category)
+            .Select(g => $"{g.Key.MapCategoryToRussian()}: {g.Sum(t => t.Amount)} руб.");
 
-    var programsInfo = string.Join("; ", context.AvailablePrograms
-        .Select(p => $"{p.LoyaltyProgramName} (ID: {p.LoyaltyProgramId})"));
+        var programsInfo = string.Join("; ", context.AvailablePrograms
+            .Select(p => $"{p.LoyaltyProgramName} (ID: {p.LoyaltyProgramId})"));
 
-    var systemMessage = $@"Ты — финансовый ассистент T-Shadow.
+        var systemMessage = $@"Ты — финансовый ассистент T-Shadow.
         Твоя база знаний: {programsInfo}.
 
         ДАННЫЕ ПОЛЬЗОВАТЕЛЯ:
@@ -159,33 +145,35 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
         4. ЛИМИТ: 3-5 предложений.
         5. СТИЛЬ: Только дефисы (-). Пиши фактами.";
 
-    var requestBody = new
-    {
-        model = Model,
-        messages = new[]
+        var requestBody = new
         {
-            new { role = "system", content = systemMessage },
-            new { role = "user", content = userMessage } 
-        },
-        temperature = 0.3,
-        max_tokens = 500
-    };
+            model = Model,
+            messages = new[]
+            {
+                new { role = "system", content = systemMessage },
+                new { role = "user", content = userMessage }
+            },
+            temperature = 0.3,
+            max_tokens = 500
+        };
 
-    using var request = new HttpRequestMessage(HttpMethod.Post, Url);
-    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-    request.Content = JsonContent.Create(requestBody);
+        using var request = new HttpRequestMessage(HttpMethod.Post, Url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+        request.Content = JsonContent.Create(requestBody);
 
-    var response = await httpClient.SendAsync(request);
-    if (!response.IsSuccessStatusCode) return "Извини, я призадумался. Попробуй позже.";
+        var response = await httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return "Извини, я призадумался. Попробуй позже.";
 
-    var result = await response.Content.ReadFromJsonAsync<JsonElement>();
-    var content = result.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var content = result.ValueKind != JsonValueKind.Undefined
+            ? result.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString()
+            : null;
 
-    return content?
-        .Replace("\r", "")
-        .Replace("\n", "")
-        .Replace("/", "")  
-        .Replace("\\", "") 
-        .Trim();
-}
+        return content?
+            .Replace("\r", "")
+            .Replace("\n", "")
+            .Replace("/", "")
+            .Replace("\\", "")
+            .Trim();
+    }
 }
