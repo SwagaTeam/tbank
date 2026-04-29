@@ -17,7 +17,7 @@ public static class PartnerMapper
     {
         return new PartnerResponse
         {
-            Name = offer.Name,
+            Name = offer.PartnerName,
             ShortDescription = offer.ShortDescription,
             LogoUrl = offer.LogoUrl,
             Color = offer.BrandColorHex,

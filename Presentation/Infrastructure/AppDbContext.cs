@@ -32,8 +32,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<Accounts>(a =>
         {
-            a.HasKey(x => x.Id);
-            a.Property(x => x.Id).HasColumnName("account_id");
+            a.HasKey(x => x.AccountId);
+            a.Property(x => x.AccountId).HasColumnName("account_id");
             a.Property(x => x.UserId).HasColumnName("user_id");
             a.Property(x => x.LoyaltyProgramId).HasColumnName("loyalty_program_id");
             a.Property(x => x.CurrentBalance)
@@ -45,8 +45,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<LoyaltyHistory>(h =>
         {
-            h.HasKey(x => x.Id);
-            h.Property(x => x.Id).HasColumnName("transaction_id");
+            h.HasKey(x => x.TransactionId);
+            h.Property(x => x.TransactionId).HasColumnName("transaction_id");
             h.Property(x => x.AccountId).HasColumnName("account_id");
             h.Property(x => x.CashbackAmount).HasColumnName("cashback_amount");
             h.Property(x => x.PayoutDate).HasColumnName("payout_date");
@@ -66,9 +66,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<Offers>(o =>
         {
-            o.HasKey(x => x.Id);
-            o.Property(x => x.Id).HasColumnName("partner_id");
-            o.Property(x => x.Name).HasColumnName("partner_name");
+            o.HasKey(x => x.PartnerId);
+            o.Property(x => x.PartnerId).HasColumnName("partner_id");
+            o.Property(x => x.PartnerName).HasColumnName("partner_name");
             o.Property(x => x.ShortDescription).HasColumnName("short_description");
             o.Property(x => x.LogoUrl).HasColumnName("logo_url");
             o.Property(x => x.BrandColorHex).HasColumnName("brand_color_hex").HasMaxLength(7);

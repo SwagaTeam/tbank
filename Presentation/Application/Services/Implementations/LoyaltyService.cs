@@ -21,7 +21,7 @@ internal class LoyaltyService(
             return new LoyaltyAnalyticsDto();
         }
 
-        var accountIds = userAccounts.Select(a => a.Id);
+        var accountIds = userAccounts.Select(a => a.AccountId);
         var userHistory = await historyRepository.GetByAccountIdsAsync(accountIds);
 
         var allPrograms = await programRepository.GetAllAsync();
@@ -46,7 +46,7 @@ internal class LoyaltyService(
             throw new UnauthorizedAccessException();
         }
         
-        var accountIds = userAccounts.Select(a => a.Id);
+        var accountIds = userAccounts.Select(a => a.AccountId);
         var userHistory = await historyRepository.GetByAccountIdsAsync(accountIds);
         var allPrograms = await programRepository.GetAllAsync();
         var offer = await offerRepository.GetPartnersAsync(user.FinancialSegment);
@@ -72,7 +72,7 @@ internal class LoyaltyService(
             var program = allPrograms.First(p => p.LoyaltyProgramId == account.LoyaltyProgramId);
             
             var totalPaid = userHistory
-                .Where(h => h.AccountId == account.Id)
+                .Where(h => h.AccountId == account.AccountId)
                 .Sum(h => h.CashbackAmount);
 
             switch (program.LoyaltyProgramName)
@@ -95,7 +95,7 @@ internal class LoyaltyService(
             .OrderBy(h => h.PayoutDate)
             .Select(h => 
             {
-                var account = userAccounts.First(a => a.Id == h.AccountId);
+                var account = userAccounts.First(a => a.AccountId == h.AccountId);
                 var program = allPrograms.First(p => p.LoyaltyProgramId == account.LoyaltyProgramId);
                 
                 return new HistoryPointDto(

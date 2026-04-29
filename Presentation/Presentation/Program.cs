@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 services
+    .AddHttpClient()
     .AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection"))
     .AddApplication()
     .AddEndpointsApiExplorer()
