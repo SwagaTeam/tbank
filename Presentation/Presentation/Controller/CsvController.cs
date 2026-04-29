@@ -19,6 +19,14 @@ public class CsvController(ICsvImportService csvService) : ControllerBase
     [HttpPost("upload-history")]
     public async Task<IActionResult> UploadHistory(IFormFile file) 
         => Ok(new { Count = await csvService.ImportAsync<LoyaltyHistory>(file) });
+    
+    [HttpPost("upload-offers")]
+    public async Task<IActionResult> UploadOffers(IFormFile file) 
+        => Ok(new { Count = await csvService.ImportAsync<Offers>(file) });
+    
+    [HttpPost("upload-programs")]
+    public async Task<IActionResult> UploadPrograms(IFormFile file) 
+        => Ok(new { Count = await csvService.ImportAsync<LoyaltyPrograms>(file) });
 
     [HttpPost("upload-all")]
     public async Task<IActionResult> UploadAll(
