@@ -5,6 +5,8 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using CsvHelper.TypeConversion;
 using Domain;
+using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories.Abstractions; 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +36,22 @@ public class CsvImportService(IServiceProvider serviceProvider) : ICsvImportServ
         var records = csv.GetRecords<T>().ToList();
 
         if (records.Count <= 0) return records.Count;
+
+        if (typeof(T) == typeof(Transaction))
+        {
+            var random = new Random();
+            var categories = Enum.GetValues<MerchantCategory>();
+            foreach (var record in records.Cast<Transaction>())
+            {
+                // Если в CSV нет категории, рандомим её
+                if (record.Category == default)
+                    record.Category = categories[random.Next(categories.Length)];
+
+                // Рандомим, является ли это партнером (например, 20% шанс)
+                record.IsPartner = random.Next(100) < 20;
+            }
+        }
+
         await repository.AddRangeAsync(records);
         await repository.SaveChangesAsync();
 
