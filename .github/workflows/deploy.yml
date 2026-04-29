@@ -1,0 +1,49 @@
+name: Test & Deploy to Server
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ./Presentation/Presentation.sln
+
+      - name: Build
+        run: dotnet build --no-restore ./Presentation/Presentation.sln
+
+      - name: Run tests
+        run: dotnet test --no-build --verbosity normal ./Presentation/Presentation.sln
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 202.181.148.124
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            cd /root/tbank/Presentation
+            
+            git pull
+            
+            docker compose down
+            docker compose up --build -d
+            
+            echo "Deploy completed successfully!"
