@@ -11,6 +11,7 @@ public static class DependencyInjection
         services.AddScoped<ILoyaltyService, LoyaltyService>();
         services.AddScoped<ICsvImportService, CsvImportService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IPartnerService, PartnerService>();
         
         return services;
     }

@@ -29,9 +29,9 @@ public interface ILoyaltyHistoryRepository : IRepository<LoyaltyHistory>
     Task<ICollection<LoyaltyHistory>> GetByAccountIdsAsync(IEnumerable<int> accountIds);
 }
 
-public interface IOfferRepository : IRepository<Offers> 
+public interface IOfferRepository : IRepository<Offers>
 {
-    Task<ICollection<Offers>> GetBySegmentAsync(FinancialSegment segment);
+    Task<ICollection<Offers>> GetPartnersAsync(FinancialSegment target);
 }
 
 public interface ILoyaltyProgramsRepository : IRepository<LoyaltyPrograms>

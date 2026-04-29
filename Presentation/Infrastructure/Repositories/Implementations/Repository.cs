@@ -41,10 +41,20 @@ public class LoyaltyHistoryRepository(AppDbContext context)
 
 public class OfferRepository(AppDbContext context) : Repository<Offers>(context), IOfferRepository
 {
-    public async Task<ICollection<Offers>> GetBySegmentAsync(FinancialSegment segment)
+    public async Task<ICollection<Offers>> GetPartnersAsync(FinancialSegment target)
     {
-        return await DbSet
-            .Where(p => p.FinancialSegment <= segment) 
+        var query = target switch
+        {
+            FinancialSegment.HIGH => DbSet.OrderBy(p => p.FinancialSegment == FinancialSegment.HIGH ? 0 :
+                p.FinancialSegment == FinancialSegment.MEDIUM ? 1 : 2),
+            FinancialSegment.MEDIUM => DbSet.OrderBy(p => p.FinancialSegment == FinancialSegment.MEDIUM ? 0 :
+                p.FinancialSegment == FinancialSegment.HIGH ? 1 : 2),
+            _ => DbSet.OrderBy(p => p.FinancialSegment == FinancialSegment.LOW ? 0 :
+                p.FinancialSegment == FinancialSegment.MEDIUM ? 1 : 2)
+        };
+
+        return await query
+            .ThenByDescending(p => p.CashbackPercent)
             .ToListAsync();
     }
 }
