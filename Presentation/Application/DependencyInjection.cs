@@ -2,7 +2,7 @@
 using Application.Services.Implementations;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Application.Di;
+namespace Application;
 
 public static class DependencyInjection
 {
@@ -10,6 +10,7 @@ public static class DependencyInjection
     {
         services.AddScoped<ILoyaltyService, LoyaltyService>();
         services.AddScoped<ICsvImportService, CsvImportService>();
+        services.AddScoped<IUserService, UserService>();
         
         return services;
     }

@@ -49,7 +49,16 @@ public class OfferRepository(AppDbContext context) : Repository<Offers>(context)
     }
 }
 
-public class UserRepository(AppDbContext context) : Repository<User>(context), IUserRepository;
+public class UserRepository(AppDbContext context) : Repository<User>(context), IUserRepository
+{
+    public async Task<int?> GetUserIdByPhoneNumber(string phoneNumber)
+    {
+        var result = await DbSet.Where(u => u.PhoneNumber == phoneNumber)
+            .FirstOrDefaultAsync();
+
+        return result?.Id;
+    }
+}
 
 public class LoyaltyProgramsRepository(AppDbContext context) 
     : Repository<LoyaltyPrograms>(context), ILoyaltyProgramsRepository;

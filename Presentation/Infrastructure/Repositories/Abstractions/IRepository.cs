@@ -16,6 +16,7 @@ public interface IRepository<T> where T : class
 
 public interface IUserRepository : IRepository<User>
 {
+    Task<int?> GetUserIdByPhoneNumber(string phoneNumber);
 }
 
 public interface IAccountRepository : IRepository<Accounts> 
