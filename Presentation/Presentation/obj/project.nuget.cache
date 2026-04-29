@@ -1,11 +1,18 @@
 {
   "version": 2,
-  "dgSpecHash": "b9qH4hQWvuk=",
+  "dgSpecHash": "yAcTnS3wIcE=",
   "success": true,
   "projectFilePath": "C:\\Users\\young\\RiderProjects\\tbank\\Presentation\\Presentation\\Presentation.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\young\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.3\\microsoft.aspnetcore.openapi.10.0.3.nupkg.sha512",
-    "C:\\Users\\young\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+    "C:\\Users\\young\\.nuget\\packages\\microsoft.entityframeworkcore\\10.0.7\\microsoft.entityframeworkcore.10.0.7.nupkg.sha512",
+    "C:\\Users\\young\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\10.0.7\\microsoft.entityframeworkcore.abstractions.10.0.7.nupkg.sha512",
+    "C:\\Users\\young\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\10.0.7\\microsoft.entityframeworkcore.analyzers.10.0.7.nupkg.sha512",
+    "C:\\Users\\young\\.nuget\\packages\\microsoft.entityframeworkcore.relational\\10.0.4\\microsoft.entityframeworkcore.relational.10.0.4.nupkg.sha512",
+    "C:\\Users\\young\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\11.0.0-preview.3.26207.106\\microsoft.extensions.dependencyinjection.abstractions.11.0.0-preview.3.26207.106.nupkg.sha512",
+    "C:\\Users\\young\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512",
+    "C:\\Users\\young\\.nuget\\packages\\npgsql\\10.0.2\\npgsql.10.0.2.nupkg.sha512",
+    "C:\\Users\\young\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\10.0.1\\npgsql.entityframeworkcore.postgresql.10.0.1.nupkg.sha512"
   ],
   "logs": []
 }
