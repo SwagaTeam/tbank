@@ -3,7 +3,7 @@
     image: loyalty-app
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Presentation/Dockerfile
     ports:
       - "5000:8080" 
     environment:
