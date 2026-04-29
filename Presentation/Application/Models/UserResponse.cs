@@ -2,11 +2,22 @@ using Domain;
 
 namespace Application.Models;
 
+/// <summary>
+/// Публичный профиль пользователя.
+/// </summary>
 public class UserResponse
 {
-    public string FullName { get; set; }
-    public string Email { get; set; }
-    public string PhoneNumber { get; set; }
+    /// <summary> Полное имя (ФИО). </summary>
+    /// <example>Иванов Иван Иванович</example>
+    public string FullName { get; set; } = string.Empty;
+
+    /// <summary> Адрес электронной почты. </summary>
+    /// <example>user@example.com</example>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary> Контактный номер телефона. </summary>
+    /// <example>79001234567</example>
+    public string PhoneNumber { get; set; } = string.Empty;
 }
 
 public static class UserMapper
