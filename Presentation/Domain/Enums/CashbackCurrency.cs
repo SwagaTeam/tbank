@@ -1,8 +1,11 @@
-﻿namespace Domain;
+﻿using System.Runtime.Serialization;
+
+namespace Domain;
 
 public enum CashbackCurrency
 {
-    Miles,
-    Rub,
-    BravoPoints
+    miles,
+    rub,
+    [EnumMember(Value = "bravo-points")]
+    bravoPoints
 }

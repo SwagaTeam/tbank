@@ -2,7 +2,7 @@
 
 public enum FinancialSegment
 {
-    Low, 
-    Medium, 
-    High  
+    LOW, 
+    MEDIUM, 
+    HIGH  
 }

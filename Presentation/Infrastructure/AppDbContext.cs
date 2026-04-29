@@ -57,11 +57,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<LoyaltyPrograms>(p =>
         {
-            p.HasKey(x => x.Id);
-            p.Property(x => x.Id).HasColumnName("loyalty_program_id");
+            p.HasKey(x => x.LoyaltyProgramId);
+            p.Property(x => x.LoyaltyProgramId).HasColumnName("loyalty_program_id");
             
-            p.Property(x => x.Name).HasColumnName("loyalty_program_name").HasConversion<string>();
-            p.Property(x => x.Currency).HasColumnName("cashback_currency").HasConversion<string>();
+            p.Property(x => x.LoyaltyProgramName).HasColumnName("loyalty_program_name").HasConversion<string>();
+            p.Property(x => x.CashbackCurrency).HasColumnName("cashback_currency").HasConversion<string>();
         });
 
         modelBuilder.Entity<Offers>(o =>

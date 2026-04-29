@@ -4,7 +4,7 @@ namespace Infrastructure.Repositories.Abstractions;
 
 public interface IRepository<T> where T : class
 {
-    Task<T?> GetByIdAsync(Guid id);
+    Task<T?> GetByIdAsync(int id);
     Task<ICollection<T>> GetAllAsync();
     Task AddAsync(T entity);
     Task AddRangeAsync(IEnumerable<T> entities);
@@ -20,12 +20,12 @@ public interface IUserRepository : IRepository<User>
 
 public interface IAccountRepository : IRepository<Accounts> 
 {
-    Task<ICollection<Accounts>> GetByUserIdAsync(Guid userId);
+    Task<ICollection<Accounts>> GetByUserIdAsync(int userId);
 }
 
 public interface ILoyaltyHistoryRepository : IRepository<LoyaltyHistory> 
 {
-    Task<ICollection<LoyaltyHistory>> GetByAccountIdsAsync(IEnumerable<Guid> accountIds);
+    Task<ICollection<LoyaltyHistory>> GetByAccountIdsAsync(IEnumerable<int> accountIds);
 }
 
 public interface IOfferRepository : IRepository<Offers> 

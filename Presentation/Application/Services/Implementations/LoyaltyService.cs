@@ -11,7 +11,7 @@ public class LoyaltyService(
     IRepository<LoyaltyPrograms> programRepository)
     : ILoyaltyService
 {
-    public async Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(Guid userId)
+    public async Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(int userId)
     {
         var userAccounts = await accountRepository.GetByUserIdAsync(userId);
         if (userAccounts.Count == 0)
@@ -43,13 +43,13 @@ public class LoyaltyService(
     {
         foreach (var account in userAccounts)
         {
-            var program = allPrograms.First(p => p.Id == account.LoyaltyProgramId);
+            var program = allPrograms.First(p => p.LoyaltyProgramId == account.LoyaltyProgramId);
             
             var totalPaid = userHistory
                 .Where(h => h.AccountId == account.Id)
                 .Sum(h => h.CashbackAmount);
 
-            switch (program.Name)
+            switch (program.LoyaltyProgramName)
             {
                 case LoyaltyProgramName.Black: result.TotalRub += totalPaid; break; 
                 case LoyaltyProgramName.AllAirlines: result.TotalMiles += totalPaid; break; 
@@ -70,12 +70,12 @@ public class LoyaltyService(
             .Select(h => 
             {
                 var account = userAccounts.First(a => a.Id == h.AccountId);
-                var program = allPrograms.First(p => p.Id == account.LoyaltyProgramId);
+                var program = allPrograms.First(p => p.LoyaltyProgramId == account.LoyaltyProgramId);
                 
                 return new HistoryPointDto(
                     h.PayoutDate, 
                     h.CashbackAmount, 
-                    program.Currency.ToString()
+                    program.CashbackCurrency.ToString()
                 );
             })
             .ToList();

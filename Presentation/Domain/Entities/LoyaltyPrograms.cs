@@ -2,7 +2,9 @@
 
 public class LoyaltyPrograms
 {
-    public Guid Id { get; set; }
-    public LoyaltyProgramName Name { get; set; }
-    public CashbackCurrency Currency { get; set; }
+    public int LoyaltyProgramId { get; set; }
+    
+    public LoyaltyProgramName LoyaltyProgramName { get; set; }
+    
+    public CashbackCurrency CashbackCurrency { get; set; }
 }

@@ -2,8 +2,8 @@
 
 public class Accounts
 {
-    public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public Guid LoyaltyProgramId { get; set; }
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public int LoyaltyProgramId { get; set; }
     public decimal CurrentBalance { get; set; }
 }

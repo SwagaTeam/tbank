@@ -5,5 +5,5 @@ namespace Application.Services.Abstractions;
 
 public interface ILoyaltyService
 {
-    public Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(Guid userId);
+    public Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(int userId);
 }
