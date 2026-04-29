@@ -19,7 +19,7 @@ public class UserService(IUserRepository userRepository) : IUserService
         return result?.FinancialSegment;
     }
 
-    public async Task<User?> GetUser(int userId)
+    public async Task<User?> GetUserInternal(int userId)
     {
         return await userRepository.GetByIdAsync(userId);
     }

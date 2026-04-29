@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Domain.Entities;
 
 namespace Infrastructure.Repositories.Abstractions;
 
@@ -37,4 +38,9 @@ public interface IOfferRepository : IRepository<Offers>
 public interface ILoyaltyProgramsRepository : IRepository<LoyaltyPrograms>
 {
     
+}
+
+public interface ITransactionRepository : IRepository<Transaction>
+{
+    Task<ICollection<Transaction>> GetByAccountIdsAsync(IEnumerable<int> accountIds);
 }

@@ -1,4 +1,5 @@
-﻿using Application.Models;
+﻿using System.Globalization;
+using Application.Models;
 using Application.Services.Abstractions;
 using Domain;
 using Infrastructure.Repositories.Abstractions;
@@ -10,29 +11,74 @@ internal class LoyaltyService(
     ILoyaltyHistoryRepository historyRepository,
     IRepository<LoyaltyPrograms> programRepository,
     IOfferRepository offerRepository,
-    IUserService userService)
+    IUserService userService,
+    ITransactionRepository transactionRepository)
     : ILoyaltyService
 {
     public async Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(int userId)
     {
         var userAccounts = await accountRepository.GetByUserIdAsync(userId);
         if (userAccounts.Count == 0)
-        {
             return new LoyaltyAnalyticsDto();
-        }
 
         var accountIds = userAccounts.Select(a => a.AccountId);
         var userHistory = await historyRepository.GetByAccountIdsAsync(accountIds);
-
         var allPrograms = await programRepository.GetAllAsync();
+        var transactions = await transactionRepository.GetByAccountIdsAsync(accountIds);
 
         var result = new LoyaltyAnalyticsDto();
 
+        // 1. Мапим балансы и историю (старая логика)
         MapBalances(result, userAccounts, userHistory, allPrograms);
-        
         result.MonthlyHistory = MapMonthlyHistory(userAccounts, userHistory, allPrograms);
-        
-        result.PredictedBenefitNextMonth = CalculateForecast(userHistory);
+
+        var now = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // 2. Сколько заработали за ТЕКУЩИЙ месяц
+        result.CurrentMonthEarned = userHistory
+            .Where(h => h.PayoutDate.Month == now.Month && h.PayoutDate.Year == now.Year)
+            .Sum(h => h.CashbackAmount);
+
+        // 3. Данные для графика за 9 месяцев (Labels + Values)
+        var culture = new CultureInfo("ru-RU");
+        for (int i = 8; i >= 0; i--)
+        {
+            var monthDate = now.AddMonths(-i);
+            var label = monthDate.ToString("MMMM", culture);
+            var value = (decimal)userHistory
+                .Where(h => h.PayoutDate.Month == monthDate.Month && h.PayoutDate.Year == monthDate.Year)
+                .Sum(h => h.CashbackAmount);
+
+            result.Last9MonthsLabels.Add(label);
+            result.Last9MonthsValues.Add(value);
+        }
+
+        // 4. Прогноз на 3 месяца (берем средние траты за 30 дней и считаем 1% кешбэка)
+        var thirtyDaysAgo = now.AddDays(-30);
+        var lastMonthSpend = transactions
+            .Where(t => t.TransactionDate >= thirtyDaysAgo)
+            .Sum(t => t.Amount);
+
+        var averageDailySpend = lastMonthSpend / 30m;
+        result.PredictedBenefit3Months = Math.Round(averageDailySpend * 90m * 0.01m, 2);
+
+        // 5. Анализ топ-категории для рекомендации
+        var topCategory = transactions
+            .GroupBy(t => t.Category)
+            .Select(g => new { Category = g.Key, Total = g.Sum(t => t.Amount) })
+            .OrderByDescending(x => x.Total)
+            .FirstOrDefault();
+
+        if (topCategory != null)
+        {
+            result.RecommendedCategoryName = topCategory.Category.ToString();
+            result.PotentialCategorySavings = Math.Round(topCategory.Total * 0.05m, 2); // 5% повышенный кешбэк
+        }
+
+        // 6. Траты у партнеров
+        result.TotalPartnerSpend = transactions
+            .Where(t => t.IsPartner)
+            .Sum(t => t.Amount);
 
         return result;
     }
@@ -40,24 +86,29 @@ internal class LoyaltyService(
     public async Task<ShadowPromptContext> GetShadowContext(int userId)
     {
         var userAccounts = await accountRepository.GetByUserIdAsync(userId);
-        var user = await userService.GetUser(userId);
+        var user = await userService.GetUserInternal(userId);
         if (user is null)
         {
             throw new UnauthorizedAccessException();
         }
-        
+
         var accountIds = userAccounts.Select(a => a.AccountId);
-        var userHistory = await historyRepository.GetByAccountIdsAsync(accountIds);
-        var allPrograms = await programRepository.GetAllAsync();
-        var offer = await offerRepository.GetPartnersAsync(user.FinancialSegment);
+
+        var historyTask = historyRepository.GetByAccountIdsAsync(accountIds);
+        var transactionsTask = transactionRepository.GetByAccountIdsAsync(accountIds);
+        var programsTask = programRepository.GetAllAsync();
+        var offersTask = offerRepository.GetPartnersAsync(user.FinancialSegment);
+
+        await Task.WhenAll(historyTask, transactionsTask, programsTask, offersTask);
 
         return new ShadowPromptContext
         (
             User: user,
             CurrentAccount: userAccounts,
-            RecentHistory: userHistory,
-            AvailablePrograms: allPrograms,
-            RelevantOffers: offer
+            RecentHistory: await historyTask,
+            Transactions: await transactionsTask,
+            AvailablePrograms: await programsTask,
+            RelevantOffers: await offersTask
         );
     }
 

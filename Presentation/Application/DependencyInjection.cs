@@ -13,6 +13,8 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IPartnerService, PartnerService>();
         services.AddScoped<IShadowModeService, ShadowModeService>();        
+        services.AddScoped<ICrossSellService, CrossSellService>();
+
         return services;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
@@ -10,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<LoyaltyHistory> LoyaltyHistories => Set<LoyaltyHistory>();
     public DbSet<LoyaltyPrograms> LoyaltyPrograms => Set<LoyaltyPrograms>();
     public DbSet<Offers> Offers => Set<Offers>();
+    public DbSet<Transaction> Transactions => Set<Transaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -77,6 +79,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
             o.HasIndex(x => x.FinancialSegment); 
         });
+
+        modelBuilder.Entity<Transaction>(t =>
+        {
+            t.HasKey(x => x.Id);
+            t.Property(x => x.Id).HasColumnName("transaction_id");
+            t.Property(x => x.Amount).HasPrecision(18, 2).HasColumnName("amount");
+            t.Property(x => x.TransactionDate).HasColumnName("transaction_date");
+            t.Property(x => x.IsPartner).HasColumnName("is_partner");
+
+            t.Property(x => x.Category)
+                .HasColumnName("merchant_category")
+                .HasConversion<string>();
+
+            t.HasIndex(x => x.TransactionDate);
+        });
+
+        modelBuilder.Entity<Transaction>()
+            .HasOne<Accounts>()
+            .WithMany()
+            .HasForeignKey(x => x.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Accounts>()
             .HasOne<User>()
