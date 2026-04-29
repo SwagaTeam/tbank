@@ -17,13 +17,13 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ./Presentation.sln
+        run: dotnet restore ./Presentation/Presentation.sln
 
       - name: Build
-        run: dotnet build --no-restore ./Presentation.sln
+        run: dotnet build --no-restore ./Presentation/Presentation.sln
 
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal ./Presentation.sln
+        run: dotnet test --no-build --verbosity normal ./Presentation/Presentation.sln
 
   deploy:
     needs: test
