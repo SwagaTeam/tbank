@@ -19,6 +19,11 @@ public class UserService(IUserRepository userRepository) : IUserService
         return result?.FinancialSegment;
     }
 
+    public async Task<User?> GetUser(int userId)
+    {
+        return await userRepository.GetByIdAsync(userId);
+    }
+
     public async Task<int?> GetUserIdByPhoneNumber(string phoneNumber)
     {
        return await userRepository.GetUserIdByPhoneNumber(phoneNumber);

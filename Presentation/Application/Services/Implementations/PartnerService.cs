@@ -9,13 +9,13 @@ public class PartnerService(IOfferRepository repository, IUserService userServic
 {
     public async Task<ICollection<PartnerResponse>> GetSortedPartnersAsync(int userId)
     {
-        var segment = await userService.GetSegment(userId);
-        if (segment is null)
+        var user = await userService.GetUser(userId);
+        if (user is null)
         {
             throw new UnauthorizedAccessException();
         }
         
-        var result = await repository.GetPartnersAsync(segment.Value);
+        var result = await repository.GetPartnersAsync(user.FinancialSegment);
         return result
             .Select(x => x.ToResponse())
             .ToList();

@@ -5,10 +5,12 @@ using Infrastructure.Repositories.Abstractions;
 
 namespace Application.Services.Implementations;
 
-public class LoyaltyService(
+internal class LoyaltyService(
     IAccountRepository accountRepository,
     ILoyaltyHistoryRepository historyRepository,
-    IRepository<LoyaltyPrograms> programRepository)
+    IRepository<LoyaltyPrograms> programRepository,
+    IOfferRepository offerRepository,
+    IUserService userService)
     : ILoyaltyService
 {
     public async Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(int userId)
@@ -33,6 +35,30 @@ public class LoyaltyService(
         result.PredictedBenefitNextMonth = CalculateForecast(userHistory);
 
         return result;
+    }
+
+    public async Task<ShadowPromptContext> GetShadowContext(int userId)
+    {
+        var userAccounts = await accountRepository.GetByUserIdAsync(userId);
+        var user = await userService.GetUser(userId);
+        if (user is null)
+        {
+            throw new UnauthorizedAccessException();
+        }
+        
+        var accountIds = userAccounts.Select(a => a.Id);
+        var userHistory = await historyRepository.GetByAccountIdsAsync(accountIds);
+        var allPrograms = await programRepository.GetAllAsync();
+        var offer = await offerRepository.GetPartnersAsync(user.FinancialSegment);
+
+        return new ShadowPromptContext
+        (
+            User: user,
+            CurrentAccount: userAccounts,
+            RecentHistory: userHistory,
+            AvailablePrograms: allPrograms,
+            RelevantOffers: offer
+        );
     }
 
     private void MapBalances(
