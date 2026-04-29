@@ -3,10 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
 
-public class AppDbContext : DbContext
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
     public DbSet<User> Users => Set<User>();
     public DbSet<Accounts> Accounts => Set<Accounts>();
     public DbSet<LoyaltyHistory> LoyaltyHistories => Set<LoyaltyHistory>();
@@ -20,33 +18,39 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<User>(u =>
         {
             u.HasKey(x => x.Id);
-            u.HasIndex(x => x.Email).IsUnique();
-            u.Property(x => x.FullName).IsRequired();
+            u.Property(x => x.Id).HasColumnName("id");
+            u.Property(x => x.Email).HasColumnName("email").IsRequired();
+            u.Property(x => x.PhoneNumber).HasColumnName("phone_number");
+            u.Property(x => x.FullName).HasColumnName("full_name").IsRequired();
             
-            u.Property(x => x.FinancialSegment).HasConversion<int>();
+            u.Property(x => x.FinancialSegment)
+                .HasColumnName("financial_segment")
+                .HasConversion<string>();
 
-            u.HasMany<Accounts>()
-                .WithOne()
-                .HasForeignKey(a => a.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+            u.HasIndex(x => x.Email).IsUnique();
         });
 
         modelBuilder.Entity<Accounts>(a =>
         {
             a.HasKey(x => x.Id);
-            a.HasIndex(x => x.UserId);
-            
-            a.Property(x => x.CurrentBalance).HasPrecision(18, 2);
+            a.Property(x => x.Id).HasColumnName("account_id");
+            a.Property(x => x.UserId).HasColumnName("user_id");
+            a.Property(x => x.LoyaltyProgramId).HasColumnName("loyalty_program_id");
+            a.Property(x => x.CurrentBalance)
+                .HasColumnName("current_balance")
+                .HasPrecision(18, 2);
 
-            a.HasMany<LoyaltyHistory>()
-                .WithOne()
-                .HasForeignKey(h => h.AccountId)
-                .OnDelete(DeleteBehavior.Cascade);
+            a.HasIndex(x => x.UserId);
         });
 
         modelBuilder.Entity<LoyaltyHistory>(h =>
         {
             h.HasKey(x => x.Id);
+            h.Property(x => x.Id).HasColumnName("transaction_id");
+            h.Property(x => x.AccountId).HasColumnName("account_id");
+            h.Property(x => x.CashbackAmount).HasColumnName("cashback_amount");
+            h.Property(x => x.PayoutDate).HasColumnName("payout_date");
+
             h.HasIndex(x => x.AccountId);
             h.HasIndex(x => x.PayoutDate); 
         });
@@ -54,17 +58,36 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<LoyaltyPrograms>(p =>
         {
             p.HasKey(x => x.Id);
-            p.Property(x => x.Name).HasConversion<string>();
-            p.Property(x => x.Currency).HasConversion<string>();
+            p.Property(x => x.Id).HasColumnName("loyalty_program_id");
+            
+            p.Property(x => x.Name).HasColumnName("loyalty_program_name").HasConversion<string>();
+            p.Property(x => x.Currency).HasColumnName("cashback_currency").HasConversion<string>();
         });
 
         modelBuilder.Entity<Offers>(o =>
         {
             o.HasKey(x => x.Id);
+            o.Property(x => x.Id).HasColumnName("partner_id");
+            o.Property(x => x.Name).HasColumnName("partner_name");
+            o.Property(x => x.ShortDescription).HasColumnName("short_description");
+            o.Property(x => x.LogoUrl).HasColumnName("logo_url");
+            o.Property(x => x.BrandColorHex).HasColumnName("brand_color_hex").HasMaxLength(7);
+            o.Property(x => x.CashbackPercent).HasColumnName("cashback_percent").HasPrecision(5, 2);
+            o.Property(x => x.FinancialSegment).HasColumnName("financial_segment").HasConversion<string>();
+
             o.HasIndex(x => x.FinancialSegment); 
-            
-            o.Property(x => x.CashbackPercent).HasPrecision(5, 2);
-            o.Property(x => x.BrandColorHex).HasMaxLength(7); 
         });
+
+        modelBuilder.Entity<Accounts>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LoyaltyHistory>()
+            .HasOne<Accounts>()
+            .WithMany()
+            .HasForeignKey(h => h.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
