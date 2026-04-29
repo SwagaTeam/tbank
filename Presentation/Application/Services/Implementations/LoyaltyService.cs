@@ -41,7 +41,7 @@ internal class LoyaltyService(
 
         // 3. Данные для графика за 9 месяцев (Labels + Values)
         var culture = new CultureInfo("ru-RU");
-        for (int i = 8; i >= 0; i--)
+        for (var i = 8; i >= 0; i--)
         {
             var monthDate = now.AddMonths(-i);
             var label = monthDate.ToString("MMMM", culture);
