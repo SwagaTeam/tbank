@@ -87,28 +87,27 @@ internal class LoyaltyService(
     {
         var userAccounts = await accountRepository.GetByUserIdAsync(userId);
         var user = await userService.GetUserInternal(userId);
+    
         if (user is null)
         {
             throw new UnauthorizedAccessException();
         }
 
-        var accountIds = userAccounts.Select(a => a.AccountId);
+        var accountIds = userAccounts.Select(a => a.AccountId).ToList();
 
-        var historyTask = historyRepository.GetByAccountIdsAsync(accountIds);
-        var transactionsTask = transactionRepository.GetByAccountIdsAsync(accountIds);
-        var programsTask = programRepository.GetAllAsync();
-        var offersTask = offerRepository.GetPartnersAsync(user.FinancialSegment);
-
-        await Task.WhenAll(historyTask, transactionsTask, programsTask, offersTask);
+        var history = await historyRepository.GetByAccountIdsAsync(accountIds);
+        var transactions = await transactionRepository.GetByAccountIdsAsync(accountIds);
+        var programs = await programRepository.GetAllAsync();
+        var offers = await offerRepository.GetPartnersAsync(user.FinancialSegment);
 
         return new ShadowPromptContext
         (
             User: user,
             CurrentAccount: userAccounts,
-            RecentHistory: await historyTask,
-            Transactions: await transactionsTask,
-            AvailablePrograms: await programsTask,
-            RelevantOffers: await offersTask
+            RecentHistory: history,
+            Transactions: transactions,
+            AvailablePrograms: programs,
+            RelevantOffers: offers
         );
     }
 

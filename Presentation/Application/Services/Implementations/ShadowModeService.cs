@@ -5,6 +5,7 @@ using Application.Services.Abstractions;
 using Microsoft.Extensions.Configuration;
 using System.Net.Http.Headers;
 using Application.Models;
+using Domain.Enums;
 
 namespace Application.Services.Implementations;
 
@@ -30,6 +31,7 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
             return ShadowRecommendationResponse.Default(context.User.FullName);
         }
 
+        // Агрегируем кэшбэк по программам
         var cashbackAnalysis = context.RecentHistory
             .GroupBy(h => h.AccountId)
             .Select(g =>
@@ -40,38 +42,40 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
                 return $"Программа {programName} (ID {acc?.LoyaltyProgramId}): {g.Sum(x => x.CashbackAmount)}";
             });
 
+        // Агрегируем транзакции по категориям для анализа AI
+        var transactionStats = context.Transactions
+            .GroupBy(t => t.Category)
+            .Select(g => $"{g.Key}: {g.Sum(t => t.Amount)} руб. ({g.Count()} транз.)");
+
         var systemMessage =
-            @"Ты — лаконичное аналитическое ядро «T-Shadow Mode». Твоя задача: конвертировать транзакции в «упущенную выгоду».
+            @"Ты — лаконичное аналитическое ядро «T-Shadow Mode». Твоя задача: конвертировать историю транзакций в «упущенную выгоду».
 
-            ### КРИТИЧЕСКИЕ ОГРАНИЧЕНИЯ (СТРОГО):
-            1. ОБЩИЙ ОБЪЕМ: Весь ответ не должен превышать 10 предложений.
-            2. ПОЛЯ JSON:
-               - current_status: 1-2 предложения.
-               - lost_profit_highlight: короткая фраза до 10 слов.
-               - recommendation_text: максимум 3-5 предложений.
-            3. ФОРМАТ: Только чистый JSON. Никаких приветствий и пояснений.
+            ### КРИТИЧЕСКИЕ ОГРАНИЧЕНИЯ:
+            1. ОБЪЕМ: Весь ответ до 5-7 предложений.
+            2. ФОРМАТ: Только чистый JSON.
+            3. ТОН: Экспертный, лаконичный, с легкой иронией. Без длинных тире (—), только дефисы (-).
 
-            ### ПРАВИЛА АНАЛИЗА:
-            1. ОПТИМИЗАЦИЯ: Сравнивай текущий кэшбэк с потенциалом в All Airlines (мили) или Platinum (Bravo).
-            2. ЭКОСИСТЕМА: Связь > 1000р -> Т-Мобайл; Баланс > 50к -> Инвестиции; Супермаркеты -> Platinum; Трэвел > 20% -> All Airlines.
-            3. ТОН: Экспертный, лаконичный, с легкой иронией. Используй только дефисы (-), запрещены длинные тире (—).
+            ### ЛОГИКА ОПТИМИЗАЦИИ:
+            - Категория Supermarkets/Pharmacy -> карта Platinum (бонусы Bravo).
+            - Категория GasStations/Restaurants -> если траты высокие, сравнивай с текущими начислениями.
+            - Если траты по всем категориям > 50к -> предлагай премиальные программы.
+            - Баланс > 50к без Инвестиций -> Т-Инвестиции.
 
             ### СТРУКТУРА JSON:
             {
-              ""current_status"": ""Факт начислений сейчас (1-2 предложения)"",
-              ""lost_profit_highlight"": ""Бьющая в цель фраза про упущенную выгоду"",
-              ""recommendation_text"": ""Анализ с цифрами и логикой: факт, боль, действие (до 5 предложений)"",
+              ""current_status"": ""Краткий факт начислений (1-2 предложения)"",
+              ""lost_profit_highlight"": ""Фраза про упущенную выгоду до 10 слов"",
+              ""recommendation_text"": ""Анализ транзакций: почему другая программа выгоднее (3-4 предложения)"",
               ""target_program_id"": 1
-            }
-            НЕ ПИШИ БОЛЬШЕ 5 ПРЕДЛОЖЕний"
-            ;
+            }";
 
         var userPrompt = $@"
             ПОЛЬЗОВАТЕЛЬ: {context.User.FullName} (Сегмент: {context.User.FinancialSegment})
             АККАУНТЫ: {string.Join(", ", context.CurrentAccount.Select(a => $"ID {a.LoyaltyProgramId} (Balance: {a.CurrentBalance})"))}
+            АНАЛИЗ ТРАТ: {string.Join("; ", transactionStats)}
             ИСТОРИЯ КЭШБЭКА: {string.Join("; ", cashbackAnalysis)}
-            ДОСТУПНО ДЛЯ ПЕРЕХОДА: {string.Join(", ", context.AvailablePrograms.Select(p => p.LoyaltyProgramName))}
-            ОФФЕРЫ: {string.Join(", ", context.RelevantOffers.Take(5).Select(o => o.PartnerName))}";
+            ДОСТУПНО ДЛЯ ПЕРЕХОДА: {string.Join(", ", context.AvailablePrograms.Select(p => $"{p.LoyaltyProgramName} (ID {p.LoyaltyProgramId})"))}
+            ОФФЕРЫ: {string.Join(", ", context.RelevantOffers.Take(3).Select(o => o.PartnerName))}";
 
         var requestBody = new
         {
@@ -83,7 +87,7 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
             },
             response_format = new { type = "json_object" },
             temperature = 0.2,
-            max_tokens  = 500,
+            max_tokens = 600,
         };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, Url);
@@ -100,18 +104,13 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
         }
 
         var result = await response.Content.ReadFromJsonAsync<JsonElement>();
-        
-        var content = result.GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString();
+        var content = result.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
 
         if (string.IsNullOrEmpty(content))
             throw new Exception("OpenRouter returned success, but message content is empty.");
 
         try 
         {
-            Console.WriteLine(content);
             return JsonSerializer.Deserialize<ShadowRecommendationResponse>(content, _jsonOptions);
         }
         catch (JsonException ex)
@@ -121,57 +120,72 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
     }
 
     public async Task<string?> GetChatResponse(int userId, string userMessage)
+{
+    var context = await loyaltyService.GetShadowContext(userId);
+
+    var categoryNames = new Dictionary<MerchantCategory, string>
     {
-        var context = await loyaltyService.GetShadowContext(userId);
-    
-        var cashbackAnalysis = context.RecentHistory
-            .GroupBy(h => h.AccountId)
-            .Select(g => $"Аккаунт {g.Key}: {g.Sum(x => x.CashbackAmount)} кэшбэка.");
+        { MerchantCategory.Supermarkets, "Супермаркеты" },
+        { MerchantCategory.Pharmacy, "Аптеки" },
+        { MerchantCategory.Restaurants, "Рестораны" },
+        { MerchantCategory.GasStations, "АЗС" },
+        { MerchantCategory.Electronics, "Электроника" },
+        { MerchantCategory.Clothes, "Одежда" }
+    };
 
-        var programsInfo = string.Join("; ", context.AvailablePrograms
-            .Select(p => $"{p.LoyaltyProgramName} (ID: {p.LoyaltyProgramId})"));
-
-        var systemMessage = $@"Ты — финансовый ассистент T-Shadow. 
-            Ты эксперт по программам: {programsInfo}.
-
-            ДАННЫЕ ПОЛЬЗОВАТЕЛЯ:
-            - Имя: {context.User.FullName}
-            - Аккаунты: {string.Join(", ", context.CurrentAccount.Select(a => $"ID {a.LoyaltyProgramId} (Баланс: {a.CurrentBalance})"))}
-            - Накопленный кэшбэк: {string.Join("; ", cashbackAnalysis)}
-
-            ### КРИТИЧЕСКИЕ ПРАВИЛА:
-            1. НИКАКОЙ НЕОПРЕДЕЛЕННОСТИ: Запрещено говорить ""сравните условия"" или ""выберите сами"". Ты ДОЛЖЕН провести расчет и сказать, какой ID программы или продукт выгоднее прямо сейчас.
-            2. КОНКРЕТИКА: Используй только данные выше. Если покупка в категории 'Путешествия', а у пользователя есть All Airlines (ID 1), говори: 'Используй карту All Airlines, это даст 10% милями вместо 1%'.
-            3. ЛИМИТ: 3-5 предложений.
-            4. ЗАПРЕТ КАЗИНО: На любые вопросы об азартных играх отвечай одной короткой фразой о рисках и переходи к анализу обычных трат.
-            5. СТИЛЬ: Без длинных тире (—), только дефисы (-).";
-
-        var requestBody = new
+    var transactionStats = context.Transactions
+        .GroupBy(t => t.Category)
+        .Select(g => 
         {
-            model = "google/gemini-2.0-flash-001",
-            messages = new[]
-            {
-                new { role = "system", content = systemMessage },
-                new { role = "user", content = userMessage } 
-            },
-            temperature = 0.4,
-            max_tokens = 500
-        };
+            var name = categoryNames.TryGetValue(g.Key, out var rusName) ? rusName : g.Key.ToString();
+            return $"{name}: {g.Sum(t => t.Amount)} руб.";
+        });
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, Url);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-        request.Content = JsonContent.Create(requestBody);
+    var programsInfo = string.Join("; ", context.AvailablePrograms
+        .Select(p => $"{p.LoyaltyProgramName} (ID: {p.LoyaltyProgramId})"));
 
-        var response = await httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return "Извини, я призадумался. Попробуй позже.";
+    var systemMessage = $@"Ты — финансовый ассистент T-Shadow.
+        Твоя база знаний: {programsInfo}.
 
-        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
-        return result.GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString()?
-            .Replace("\r\n", "") 
-            .Replace("\n", "")  
-            .Trim();
-    }
+        ДАННЫЕ ПОЛЬЗОВАТЕЛЯ:
+        - Имя: {context.User.FullName}
+        - Траты по категориям: {string.Join("; ", transactionStats)}
+        - Аккаунты: {string.Join(", ", context.CurrentAccount.Select(a => $"ID {a.LoyaltyProgramId} (Баланс: {a.CurrentBalance})"))}
+
+        ### ПРАВИЛА (СТРОГО):
+        1. БУДЬ РЕШИТЕЛЬНЫМ: Анализируй траты. Если много трат в категории 'Супермаркеты', говори использовать Platinum. 
+        2. ОДНА СТРОКА: Пиши без переносов строк.
+        3. НИКАКИХ СЛЕШЕЙ: Не используй символы / или \ в тексте.
+        4. ЛИМИТ: 3-5 предложений.
+        5. СТИЛЬ: Только дефисы (-). Пиши фактами.";
+
+    var requestBody = new
+    {
+        model = Model,
+        messages = new[]
+        {
+            new { role = "system", content = systemMessage },
+            new { role = "user", content = userMessage } 
+        },
+        temperature = 0.3,
+        max_tokens = 500
+    };
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, Url);
+    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+    request.Content = JsonContent.Create(requestBody);
+
+    var response = await httpClient.SendAsync(request);
+    if (!response.IsSuccessStatusCode) return "Извини, я призадумался. Попробуй позже.";
+
+    var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+    var content = result.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+
+    return content?
+        .Replace("\r", "")
+        .Replace("\n", "")
+        .Replace("/", "")  
+        .Replace("\\", "") 
+        .Trim();
+}
 }
