@@ -16,7 +16,7 @@ internal class LoyaltyService(
     ITransactionService transactionService)
     : ILoyaltyService
 {
-    public async Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(int userId)
+    public async Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(int userId, bool includeMonthlyHistory = true)
     {
         var userAccounts = await accountRepository.GetByUserIdAsync(userId);
         if (userAccounts.Count == 0)
@@ -41,7 +41,11 @@ internal class LoyaltyService(
         var now = DateOnly.FromDateTime(DateTime.UtcNow);
 
         MapBalances(result, userAccounts, userHistory, allPrograms);
-        result.MonthlyHistory = MapMonthlyHistory(userAccounts, userHistory, allPrograms);
+
+        if (includeMonthlyHistory)
+        {
+            result.MonthlyHistory = MapMonthlyHistory(userAccounts, userHistory, allPrograms);
+        }
 
         result.CurrentMonthEarned = userHistory
             .Where(h => h.PayoutDate.Month == now.Month && h.PayoutDate.Year == now.Year)
@@ -129,6 +133,8 @@ internal class LoyaltyService(
     {
         foreach (var account in userAccounts)
         {
+            result.TotalReferal += account.ReferalBalance;
+            
             var program = allPrograms.First(p => p.LoyaltyProgramId == account.LoyaltyProgramId);
             
             var totalPaid = userHistory

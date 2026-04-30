@@ -6,4 +6,5 @@ public class Accounts
     public int UserId { get; set; }
     public int LoyaltyProgramId { get; set; }
     public decimal CurrentBalance { get; set; }
+    public decimal? ReferalBalance { get; set; }
 }

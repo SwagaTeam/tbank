@@ -31,7 +31,7 @@ public class PartnerController(IPartnerService partnerService) : ControllerBase
     {
         var result = await partnerService.GetSortedPartnersAsync(userId);
 
-        if (result == null || !result.Any())
+        if (result.Count == 0)
         {
             return NotFound(new { Message = "Для данного пользователя предложения не найдены." });
         }

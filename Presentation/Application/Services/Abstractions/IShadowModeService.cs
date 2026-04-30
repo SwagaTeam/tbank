@@ -6,4 +6,5 @@ public interface IShadowModeService
 {
     Task<ShadowRecommendationResponse?> GetShadowRecommendation(int userId);
     Task<string?> GetChatResponse(int userId, string userMessage);
+    internal Task<string?> GetQuickSavingsHighlightAsync(int userId);
 }

@@ -31,7 +31,6 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
             return ShadowRecommendationResponse.Default(context.User.FullName);
         }
 
-        // Агрегируем кэшбэк по программам
         var cashbackAnalysis = context.RecentHistory
             .GroupBy(h => h.AccountId)
             .Select(g =>
@@ -42,7 +41,6 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
                 return $"Программа {programName} (ID {acc?.LoyaltyProgramId}): {g.Sum(x => x.CashbackAmount)}";
             });
 
-        // Агрегируем транзакции по категориям для анализа AI
         var transactionStats = context.Transactions
             .GroupBy(t => t.Category)
             .Select(g => $"{g.Key}: {g.Sum(t => t.Amount)} руб. ({g.Count()} транз.)");
@@ -174,6 +172,79 @@ internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyS
             .Replace("\n", "")
             .Replace("/", "")
             .Replace("\\", "")
+            .Trim();
+    }
+
+    public async Task<string?> GetQuickSavingsHighlightAsync(int userId)
+    {
+        var context = await loyaltyService.GetShadowContext(userId);
+
+        var lastMonthDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1));
+
+        var lastMonthTransactions = context.Transactions
+            .Where(t => t.TransactionDate >= lastMonthDate)
+            .ToList();
+
+        if (lastMonthTransactions.Count == 0)
+        {
+            return "В этом месяце вы можете начать экономить, совершив первую покупку.";
+        }
+
+        var topCategories = lastMonthTransactions
+            .GroupBy(t => t.Category)
+            .OrderByDescending(g => g.Sum(t => t.Amount))
+            .Take(3)
+            .Select(g => $"{g.Key.MapCategoryToRussian()}: {g.Sum(t => t.Amount)} руб.");
+
+        var topOffers = context.RelevantOffers
+            .Take(3)
+            .Select(o => $"{o.PartnerName}");
+
+        var systemMessage =
+            @"Ты - финансовый аналитик. Твоя единственная цель - вычислить упущенную выгоду и выдать короткий тизер.
+    
+            ### КРИТИЧЕСКИЕ ПРАВИЛА:
+            1. ФОРМАТ: Строго ОДНО предложение.
+            2. ШАБЛОН: 'В этом месяце вы можете сэкономить еще [сумма] руб. на [категория или партнер].'
+            3. СИМВОЛЫ: Никаких переносов строк. Строго запрещено использовать длинное тире, используй только обычный дефис (-).
+            4. ЛОГИКА: Возьми самую крупную категорию трат, посчитай от нее примерно 5% (или используй подходящего партнера) и подставь в шаблон.";
+
+        var userPrompt = $@"
+            Траты пользователя за последний месяц: {string.Join("; ", topCategories)}
+            Актуальные партнеры: {string.Join(", ", topOffers)}";
+
+        var requestBody = new
+        {
+            model = Model,
+            messages = new[]
+            {
+                new { role = "system", content = systemMessage },
+                new { role = "user", content = userPrompt }
+            },
+            temperature = 0.3,
+            max_tokens = 100
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, Url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+        request.Content = JsonContent.Create(requestBody);
+
+        var response = await httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        // Безопасное извлечение контента
+        string? content = null;
+        if (result.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+        {
+            content = choices[0].GetProperty("message").GetProperty("content").GetString();
+        }
+
+        return content?
+            .Replace("\r", "")
+            .Replace("\n", "")
+            .Replace("—", "-")
             .Trim();
     }
 }

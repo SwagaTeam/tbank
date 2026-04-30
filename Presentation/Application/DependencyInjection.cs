@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<IShadowModeService, ShadowModeService>();        
         services.AddScoped<ICrossSellService, CrossSellService>();
         services.AddScoped<ITransactionService, TransactionService>();
+        services.AddScoped<IDashboardService, DashboardService>();
 
         return services;
     }

@@ -23,6 +23,8 @@ public class LoyaltyAnalyticsDto
     /// </summary>
     /// <example>320</example>
     public decimal TotalBravo { get; set; }
+    
+    public decimal? TotalReferal { get; set; }
 
     /// <summary> 
     /// Детализированная история начислений по датам. 
