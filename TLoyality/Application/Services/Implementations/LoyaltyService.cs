@@ -7,7 +7,7 @@ using Infrastructure.Repositories.Abstractions;
 
 namespace Application.Services.Implementations;
 
-internal class LoyaltyService(
+public class LoyaltyService(
     IAccountRepository accountRepository,
     ILoyaltyHistoryRepository historyRepository,
     IRepository<LoyaltyPrograms> programRepository,

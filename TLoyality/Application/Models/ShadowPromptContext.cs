@@ -16,7 +16,7 @@ namespace Application.Models;
 /// Ключевой параметр для определения паттернов трат и скрытой выгоды.
 /// </param>
 /// <param name="RelevantOffers">Список актуальных предложений партнеров, отфильтрованный под сегмент пользователя.</param>
-internal record ShadowPromptContext(
+public record ShadowPromptContext(
     User User,
     ICollection<Accounts> CurrentAccount,
     ICollection<LoyaltyHistory> RecentHistory,

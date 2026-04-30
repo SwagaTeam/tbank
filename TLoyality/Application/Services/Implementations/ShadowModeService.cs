@@ -9,7 +9,7 @@ using Domain.Enums;
 
 namespace Application.Services.Implementations;
 
-internal class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyService, IConfiguration configuration)
+public class ShadowModeService(HttpClient httpClient, ILoyaltyService loyaltyService, IConfiguration configuration)
     : IShadowModeService
 {
     private readonly string? _apiKey = Environment.GetEnvironmentVariable("apiKey");
