@@ -211,3 +211,5 @@ FakesAssemblies/
 *.env
 
 nginx/ssl/
+
+# check ci
