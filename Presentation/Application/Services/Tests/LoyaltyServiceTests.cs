@@ -1,7 +1,7 @@
 using Application.Models;
 using Application.Services.Abstractions;
 using Application.Services.Implementations;
-using Domaint.Entities;
+using Domain.Entities;
 using Domain.Enums;
 using FluentAssertions;
 using Infrastructure.Repositories.Abstractions;
