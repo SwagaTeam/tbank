@@ -8,7 +8,7 @@ using Infrastructure.Repositories.Abstractions;
 using NSubstitute;
 using Xunit;
 
-namespace Application.Services.Tests;
+namespace TLoyality.Tests.Tests;
 
 public class LoyaltyServiceTests
 {
