@@ -23,7 +23,7 @@ jobs:
         run: dotnet build --no-restore ./Presentation/Presentation.sln
 
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal ./Presentation/Presentation.sln
+        run: dotnet test ./Presentation/Application/Application.csproj --verbosity normal --logger "console;verbosity=detailed"
 
   deploy:
     needs: test
