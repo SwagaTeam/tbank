@@ -133,8 +133,7 @@ internal class LoyaltyService(
     {
         foreach (var account in userAccounts)
         {
-            result.TotalReferal += account.ReferalBalance;
-            
+            result.TotalReferal = (result.TotalReferal ?? 0) + account.ReferalBalance;            
             var program = allPrograms.First(p => p.LoyaltyProgramId == account.LoyaltyProgramId);
             
             var totalPaid = userHistory
