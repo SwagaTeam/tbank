@@ -3,6 +3,7 @@ using System;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429205056_transaction")]
+    partial class transaction
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,14 +25,14 @@ namespace Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Domain.Entities.Accounts", b =>
+            modelBuilder.Entity("Domain.Accounts", b =>
                 {
-                    b.Property<int>("AccountId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("account_id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AccountId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("CurrentBalance")
                         .HasPrecision(18, 2)
@@ -40,119 +43,15 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("loyalty_program_id");
 
-                    b.Property<decimal?>("ReferalBalance")
-                        .HasColumnType("numeric");
-
                     b.Property<int>("UserId")
                         .HasColumnType("integer")
                         .HasColumnName("user_id");
 
-                    b.HasKey("AccountId");
+                    b.HasKey("Id");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("Accounts");
-                });
-
-            modelBuilder.Entity("Domain.Entities.LoyaltyHistory", b =>
-                {
-                    b.Property<int>("TransactionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("transaction_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TransactionId"));
-
-                    b.Property<int>("AccountId")
-                        .HasColumnType("integer")
-                        .HasColumnName("account_id");
-
-                    b.Property<int>("CashbackAmount")
-                        .HasColumnType("integer")
-                        .HasColumnName("cashback_amount");
-
-                    b.Property<DateOnly>("PayoutDate")
-                        .HasColumnType("date")
-                        .HasColumnName("payout_date");
-
-                    b.HasKey("TransactionId");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("PayoutDate");
-
-                    b.ToTable("LoyaltyHistories");
-                });
-
-            modelBuilder.Entity("Domain.Entities.LoyaltyPrograms", b =>
-                {
-                    b.Property<int>("LoyaltyProgramId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("loyalty_program_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LoyaltyProgramId"));
-
-                    b.Property<string>("CashbackCurrency")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("cashback_currency");
-
-                    b.Property<string>("LoyaltyProgramName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("loyalty_program_name");
-
-                    b.HasKey("LoyaltyProgramId");
-
-                    b.ToTable("LoyaltyPrograms");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Offers", b =>
-                {
-                    b.Property<int>("PartnerId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("partner_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PartnerId"));
-
-                    b.Property<string>("BrandColorHex")
-                        .IsRequired()
-                        .HasMaxLength(7)
-                        .HasColumnType("character varying(7)")
-                        .HasColumnName("brand_color_hex");
-
-                    b.Property<decimal>("CashbackPercent")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)")
-                        .HasColumnName("cashback_percent");
-
-                    b.Property<string>("FinancialSegment")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("financial_segment");
-
-                    b.Property<string>("LogoUrl")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("logo_url");
-
-                    b.Property<string>("PartnerName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("partner_name");
-
-                    b.Property<string>("ShortDescription")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("short_description");
-
-                    b.HasKey("PartnerId");
-
-                    b.HasIndex("FinancialSegment");
-
-                    b.ToTable("Offers");
                 });
 
             modelBuilder.Entity("Domain.Entities.Transaction", b =>
@@ -194,7 +93,108 @@ namespace Infrastructure.Migrations
                     b.ToTable("Transactions");
                 });
 
-            modelBuilder.Entity("Domain.Entities.User", b =>
+            modelBuilder.Entity("Domain.LoyaltyHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("transaction_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("integer")
+                        .HasColumnName("account_id");
+
+                    b.Property<int>("CashbackAmount")
+                        .HasColumnType("integer")
+                        .HasColumnName("cashback_amount");
+
+                    b.Property<DateOnly>("PayoutDate")
+                        .HasColumnType("date")
+                        .HasColumnName("payout_date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("PayoutDate");
+
+                    b.ToTable("LoyaltyHistories");
+                });
+
+            modelBuilder.Entity("Domain.LoyaltyPrograms", b =>
+                {
+                    b.Property<int>("LoyaltyProgramId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("loyalty_program_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LoyaltyProgramId"));
+
+                    b.Property<string>("CashbackCurrency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("cashback_currency");
+
+                    b.Property<string>("LoyaltyProgramName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("loyalty_program_name");
+
+                    b.HasKey("LoyaltyProgramId");
+
+                    b.ToTable("LoyaltyPrograms");
+                });
+
+            modelBuilder.Entity("Domain.Offers", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("partner_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BrandColorHex")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("brand_color_hex");
+
+                    b.Property<decimal>("CashbackPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("cashback_percent");
+
+                    b.Property<string>("FinancialSegment")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("financial_segment");
+
+                    b.Property<string>("LogoUrl")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("logo_url");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("partner_name");
+
+                    b.Property<string>("ShortDescription")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("short_description");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FinancialSegment");
+
+                    b.ToTable("Offers");
+                });
+
+            modelBuilder.Entity("Domain.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -231,27 +231,27 @@ namespace Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Accounts", b =>
+            modelBuilder.Entity("Domain.Accounts", b =>
                 {
-                    b.HasOne("Domain.Entities.User", null)
+                    b.HasOne("Domain.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.LoyaltyHistory", b =>
+            modelBuilder.Entity("Domain.Entities.Transaction", b =>
                 {
-                    b.HasOne("Domain.Entities.Accounts", null)
+                    b.HasOne("Domain.Accounts", null)
                         .WithMany()
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.Transaction", b =>
+            modelBuilder.Entity("Domain.LoyaltyHistory", b =>
                 {
-                    b.HasOne("Domain.Entities.Accounts", null)
+                    b.HasOne("Domain.Accounts", null)
                         .WithMany()
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)

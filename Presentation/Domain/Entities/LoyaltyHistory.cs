@@ -1,8 +1,8 @@
-﻿namespace Domain;
+﻿namespace Domain.Entities;
 
 public class LoyaltyHistory
 {
-    public int Id { get; set; }
+    public int TransactionId { get; set; }
     public int AccountId { get; set; }
     public int CashbackAmount { get; set; }
     public DateOnly PayoutDate { get; set; }

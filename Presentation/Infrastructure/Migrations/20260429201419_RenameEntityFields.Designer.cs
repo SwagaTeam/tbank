@@ -3,6 +3,7 @@ using System;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429201419_RenameEntityFields")]
+    partial class RenameEntityFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,7 +25,7 @@ namespace Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Domain.Entities.Accounts", b =>
+            modelBuilder.Entity("Domain.Accounts", b =>
                 {
                     b.Property<int>("AccountId")
                         .ValueGeneratedOnAdd()
@@ -40,9 +43,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("loyalty_program_id");
 
-                    b.Property<decimal?>("ReferalBalance")
-                        .HasColumnType("numeric");
-
                     b.Property<int>("UserId")
                         .HasColumnType("integer")
                         .HasColumnName("user_id");
@@ -54,7 +54,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("Accounts");
                 });
 
-            modelBuilder.Entity("Domain.Entities.LoyaltyHistory", b =>
+            modelBuilder.Entity("Domain.LoyaltyHistory", b =>
                 {
                     b.Property<int>("TransactionId")
                         .ValueGeneratedOnAdd()
@@ -84,7 +84,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("LoyaltyHistories");
                 });
 
-            modelBuilder.Entity("Domain.Entities.LoyaltyPrograms", b =>
+            modelBuilder.Entity("Domain.LoyaltyPrograms", b =>
                 {
                     b.Property<int>("LoyaltyProgramId")
                         .ValueGeneratedOnAdd()
@@ -108,7 +108,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("LoyaltyPrograms");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Offers", b =>
+            modelBuilder.Entity("Domain.Offers", b =>
                 {
                     b.Property<int>("PartnerId")
                         .ValueGeneratedOnAdd()
@@ -155,46 +155,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("Offers");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Transaction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("transaction_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccountId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("merchant_category");
-
-                    b.Property<bool>("IsPartner")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_partner");
-
-                    b.Property<DateOnly>("TransactionDate")
-                        .HasColumnType("date")
-                        .HasColumnName("transaction_date");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("TransactionDate");
-
-                    b.ToTable("Transactions");
-                });
-
-            modelBuilder.Entity("Domain.Entities.User", b =>
+            modelBuilder.Entity("Domain.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -231,27 +192,18 @@ namespace Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Accounts", b =>
+            modelBuilder.Entity("Domain.Accounts", b =>
                 {
-                    b.HasOne("Domain.Entities.User", null)
+                    b.HasOne("Domain.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.LoyaltyHistory", b =>
+            modelBuilder.Entity("Domain.LoyaltyHistory", b =>
                 {
-                    b.HasOne("Domain.Entities.Accounts", null)
-                        .WithMany()
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.Entities.Transaction", b =>
-                {
-                    b.HasOne("Domain.Entities.Accounts", null)
+                    b.HasOne("Domain.Accounts", null)
                         .WithMany()
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)

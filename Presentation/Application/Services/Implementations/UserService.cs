@@ -1,6 +1,8 @@
 using Application.Models;
 using Application.Services.Abstractions;
 using Domain;
+using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories.Abstractions;
 
 namespace Application.Services.Implementations;
@@ -13,13 +15,7 @@ public class UserService(IUserRepository userRepository) : IUserService
         return users.Select(x => x.ToResponse()).ToList();
     }
 
-    public async Task<FinancialSegment?> GetSegment(int userId)
-    {
-        var result = await userRepository.GetByIdAsync(userId);
-        return result?.FinancialSegment;
-    }
-
-    public async Task<User?> GetUser(int userId)
+    public async Task<User?> GetUserInternal(int userId)
     {
         return await userRepository.GetByIdAsync(userId);
     }

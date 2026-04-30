@@ -9,7 +9,7 @@ public class PartnerService(IOfferRepository repository, IUserService userServic
 {
     public async Task<ICollection<PartnerResponse>> GetSortedPartnersAsync(int userId)
     {
-        var user = await userService.GetUser(userId);
+        var user = await userService.GetUserInternal(userId);
         if (user is null)
         {
             throw new UnauthorizedAccessException();
