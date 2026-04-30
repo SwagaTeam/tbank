@@ -6,7 +6,7 @@ using Microsoft.OpenApi;
 
 public class Program
 {
-    private static void Main(string[] args)
+    public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         var services = builder.Services;
@@ -26,7 +26,6 @@ public class Program
             .AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection"))
             .AddApplication()
             .AddEndpointsApiExplorer()
-            .AddSwaggerGen()
             .AddControllers();
         
         AddSwagger(services);
@@ -45,7 +44,14 @@ public class Program
             app.UseSwaggerUI();
         }
 
+        app.UseRouting();
+
+        app.UseCors("AllowAll");
+
         app.UseHttpsRedirection();
+
+        // Авторизация (если планируется использование [Authorize])
+        // app.UseAuthorization();
 
         app.MapControllers();
 
@@ -65,7 +71,10 @@ public class Program
 
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            options.IncludeXmlComments(xmlPath);
+            if (File.Exists(xmlPath))
+            {
+                options.IncludeXmlComments(xmlPath);
+            }
         });
     }
 }
