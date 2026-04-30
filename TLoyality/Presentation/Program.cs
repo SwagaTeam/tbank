@@ -10,16 +10,6 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var services = builder.Services;
-
-        services.AddCors(options =>
-        {
-            options.AddPolicy("AllowAll", policy =>
-            {
-                policy.AllowAnyOrigin()  
-                    .AllowAnyMethod()   
-                    .AllowAnyHeader(); 
-            });
-        });
         
         services
             .AddHttpClient()
@@ -31,8 +21,6 @@ public class Program
         AddSwagger(services);
         
         var app = builder.Build();
-
-        app.UseCors("AllowAll");
 
         using (var scope = app.Services.CreateScope())
         {
