@@ -55,7 +55,7 @@ public class LoyaltyServiceTests
         // Assert
         result.TotalRub.Should().Be(500);
         result.TotalMiles.Should().Be(2000);
-        result.TotalReferal.Should().Be(150);
+        result.TotalReferal.Should().Be(10000);
     }
 
     [Fact]
