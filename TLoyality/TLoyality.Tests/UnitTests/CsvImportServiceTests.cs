@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http.Internal;
 using NSubstitute;
 using Xunit;
 
-namespace Application.Services.Tests;
+namespace TLoyality.Tests.Tests;
 
 public class CsvImportServiceTests
 {

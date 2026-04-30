@@ -7,7 +7,7 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;
 
-namespace Application.Services.Tests;
+namespace TLoyality.Tests.Tests;
 
 public class CrossSellServiceTests
 {
