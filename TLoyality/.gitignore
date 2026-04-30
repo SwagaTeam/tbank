@@ -210,3 +210,4 @@ FakesAssemblies/
 *.sln.iml
 *.env
 
+nginx/ssl/
