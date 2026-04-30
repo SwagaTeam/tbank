@@ -4,42 +4,58 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
-public class Program
+public partial class Program
 {
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        var services = builder.Services;
-
+        
+        // Настройка сервера
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.AllowAlternateSchemes = true;
         });
 
-        services
+        // Регистрация слоев и сервисов
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        builder.Services
             .AddHttpClient()
-            .AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection"))
+            .AddInfrastructure(connectionString)
             .AddApplication()
             .AddEndpointsApiExplorer()
             .AddControllers();
 
-        services.AddScoped<DbInitializer>();
+        builder.Services.AddScoped<DbInitializer>();
         
-        AddSwagger(services);
+        AddSwagger(builder.Services);
         
         var app = builder.Build();
 
-        using (var scope = app.Services.CreateScope())
+        // --- ИСПРАВЛЕНИЕ ДЛЯ ТЕСТОВ ---
+        // Запускаем миграции только если мы НЕ в режиме тестирования
+        if (!app.Environment.IsEnvironment("Testing"))
         {
-            //Migrate
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await db.Database.MigrateAsync();
-
-            //Seed
-            var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
-            await initializer.SeedAsync();
+            using var scope = app.Services.CreateScope();
+            try
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                // Проверяем наличие строки подключения перед миграцией
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    await db.Database.MigrateAsync();
+                    var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
+                    await initializer.SeedAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // В реальном проекте здесь должен быть логгер
+                Console.WriteLine($"Ошибка при инициализации БД: {ex.Message}");
+            }
         }
 
+        // Middleware пайплайн
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -47,9 +63,7 @@ public class Program
         }
 
         app.UseRouting();
-
         app.UseHttpsRedirection();
-
         app.MapControllers();
 
         await app.RunAsync();
@@ -66,6 +80,7 @@ public class Program
                 Description = "API для платформы лояльности и персонализированных офферов"
             });
 
+            // Безопасное добавление XML-комментариев
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
             if (File.Exists(xmlPath))
@@ -75,3 +90,6 @@ public class Program
         });
     }
 }
+
+// Критически важно для WebApplicationFactory в тестах!
+public partial class Program { }

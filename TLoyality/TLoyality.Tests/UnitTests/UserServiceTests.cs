@@ -6,7 +6,7 @@ using Infrastructure.Repositories.Abstractions;
 using NSubstitute;
 using Xunit;
 
-namespace TLoyality.Tests.Tests;
+namespace TLoyality.Tests.UnitTests;
 
 public class UserServiceTests
 {

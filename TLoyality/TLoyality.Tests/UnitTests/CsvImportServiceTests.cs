@@ -4,11 +4,10 @@ using Domain.Entities;
 using FluentAssertions;
 using Infrastructure.Repositories.Abstractions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Internal;
 using NSubstitute;
 using Xunit;
 
-namespace TLoyality.Tests.Tests;
+namespace TLoyality.Tests.UnitTests;
 
 public class CsvImportServiceTests
 {
