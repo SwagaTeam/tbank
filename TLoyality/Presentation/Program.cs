@@ -6,7 +6,7 @@ using Microsoft.OpenApi;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         var services = builder.Services;
@@ -22,6 +22,8 @@ public class Program
             .AddApplication()
             .AddEndpointsApiExplorer()
             .AddControllers();
+
+        services.AddScoped<DbInitializer>();
         
         AddSwagger(services);
         
@@ -29,8 +31,13 @@ public class Program
 
         using (var scope = app.Services.CreateScope())
         {
+            //Migrate
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.Migrate();
+            await db.Database.MigrateAsync();
+
+            //Seed
+            var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
+            await initializer.SeedAsync();
         }
 
         if (app.Environment.IsDevelopment())
@@ -45,7 +52,7 @@ public class Program
 
         app.MapControllers();
 
-        app.Run();
+        await app.RunAsync();
     }
 
     static void AddSwagger(IServiceCollection services)

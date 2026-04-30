@@ -12,6 +12,8 @@ COPY . .
 WORKDIR "/src/Presentation"
 RUN dotnet build "Presentation.csproj" -c Release -o /app/build
 
+COPY Presentation/SeedData/ /app/SeedData/
+
 FROM build AS publish
 RUN dotnet publish "Presentation.csproj" -c Release -o /app/publish /p:UseAppHost=false
 

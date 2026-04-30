@@ -26,41 +26,64 @@ public class CsvImportService(IServiceProvider serviceProvider) : ICsvImportServ
     /// <returns>Количество успешно импортированных записей.</returns>
     public async Task<int> ImportAsync<T>(IFormFile? file) where T : class
     {
-        if (file == null || file.Length == 0) return 0;
+        if (file == null || file.Length == 0)
+            return 0;
+        using var stream = file.OpenReadStream();
+        return await ImportFromStreamInternalAsync<T>(stream);
+    }
 
+    /// <summary>
+    /// Выполняет асинхронный импорт объектов типа <typeparamref name="T"/> из файла находящегося по заданному пути.
+    /// </summary>
+    public async Task<int> ImportFromPathAsync<T>(string filePath) where T : class
+    {
+        if (!File.Exists(filePath))
+            return 0;
+        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+        return await ImportFromStreamInternalAsync<T>(stream);
+    }
+
+    /// <summary>
+    /// Общая внутренняя логика обработки потока данных
+    /// </summary>
+    private async Task<int> ImportFromStreamInternalAsync<T>(Stream stream) where T : class
+    {
         var repository = serviceProvider.GetRequiredService<IRepository<T>>();
+        using var reader = new StreamReader(stream);
 
-        using var reader = new StreamReader(file.OpenReadStream());
-        
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
-            // Упрощаем сопоставление заголовков: удаляем подчеркивания и приводим к нижнему регистру,
-            // чтобы свойства в C# (PascalCase) мапились на csv_headers (snake_case) без явных атрибутов.
             PrepareHeaderForMatch = args => args.Header.Replace("_", "").ToLower(),
-            HeaderValidated = null, 
+            HeaderValidated = null,
             MissingFieldFound = null
         };
 
         using var csv = new CsvReader(reader, config);
-    
-        // Регистрируем кастомные конвертеры для корректной обработки EnumMemberAttribute в перечислениях.
+
+        // Регистрация конвертеров для EnumMember
         csv.Context.TypeConverterCache.AddConverter<LoyaltyProgramName>(new EnumMemberConverter<LoyaltyProgramName>());
         csv.Context.TypeConverterCache.AddConverter<CashbackCurrency>(new EnumMemberConverter<CashbackCurrency>());
-        
+
         var records = csv.GetRecords<T>().ToList();
+        if (records.Count <= 0)
+            return 0;
 
-        if (records.Count <= 0) return records.Count;
-
-        // Паттерн-матчинг типа: если импортируется история лояльности, 
-        // запускаем триггер на создание имитационных транзакций для наполнения БД.
+        // Триггер на генерацию транзакций
         if (typeof(T) == typeof(LoyaltyHistory))
-        {
             await GenerateTransactionsFromHistory(records.Cast<LoyaltyHistory>());
+
+        // Рандом баланса для рефералов
+        if (typeof(T) == typeof(Accounts))
+        {
+            foreach (var record in records)
+            {
+                if (record is Accounts acc)
+                    acc.ReferalBalance = Random.Shared.Next(0, 6) * 1000;
+            }
         }
 
         await repository.AddRangeAsync(records);
         await repository.SaveChangesAsync();
-
         return records.Count;
     }
 

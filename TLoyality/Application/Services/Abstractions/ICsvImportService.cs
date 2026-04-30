@@ -5,4 +5,5 @@ namespace Application.Services.Abstractions;
 public interface ICsvImportService
 {
    Task<int> ImportAsync<T>(IFormFile file) where T : class;
+   Task<int> ImportFromPathAsync<T>(string filePath) where T : class;
 }
