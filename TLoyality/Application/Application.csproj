@@ -13,7 +13,6 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
-        <InternalsVisibleTo Include="Application.Tests" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,8 +21,6 @@
         <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.9" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0-preview.3.26207.106" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
-        <PackageReference Include="NSubstitute" Version="6.0.0-rc.1" />
-        <PackageReference Include="xunit" Version="2.9.3" />
     </ItemGroup>
 
 </Project>
