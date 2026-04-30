@@ -32,6 +32,8 @@ public class Program
         
         var app = builder.Build();
 
+        app.UseCors("AllowAll");
+
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -46,12 +48,7 @@ public class Program
 
         app.UseRouting();
 
-        app.UseCors("AllowAll");
-
         app.UseHttpsRedirection();
-
-        // Авторизация (если планируется использование [Authorize])
-        // app.UseAuthorization();
 
         app.MapControllers();
 
