@@ -4,7 +4,6 @@ using Application.Services.Abstractions;
 using CsvHelper;
 using CsvHelper.Configuration;
 using CsvHelper.TypeConversion;
-using Domain;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Abstractions; 
@@ -60,7 +59,7 @@ public class CsvImportService(IServiceProvider serviceProvider) : ICsvImportServ
             // На одну выплату кешбэка генерируем 2-5 транзакций
             var transactionsCount = random.Next(2, 6);
 
-            for (int i = 0; i < transactionsCount; i++)
+            for (var i = 0; i < transactionsCount; i++)
             {
                 // Имитируем, что средний кешбэк — это 1-5% от покупки
                 // Поэтому сумма транзакции = (Кешбэк / Кол-во транзакций) * Рандомный множитель
@@ -86,10 +85,9 @@ public class CsvImportService(IServiceProvider serviceProvider) : ICsvImportServ
     }
 }
 
-public class EnumMemberConverter<T> : EnumConverter where T : struct, Enum
+public class EnumMemberConverter<T>() : EnumConverter(typeof(T))
+    where T : struct, Enum
 {
-    public EnumMemberConverter() : base(typeof(T)) { }
-
     public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
     {
         if (string.IsNullOrWhiteSpace(text)) return default(T);

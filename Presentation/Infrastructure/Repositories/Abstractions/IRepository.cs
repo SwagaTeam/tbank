@@ -1,5 +1,6 @@
 ﻿using Domain;
 using Domain.Entities;
+using Domain.Enums;
 
 namespace Infrastructure.Repositories.Abstractions;
 

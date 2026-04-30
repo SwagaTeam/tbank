@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Domain.Entities;
 using Infrastructure.Repositories.Abstractions;
 using Infrastructure.Repositories.Implementations;
 using Microsoft.EntityFrameworkCore;

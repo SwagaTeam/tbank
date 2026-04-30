@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using Application.Models;
 using Application.Services.Abstractions;
-using Domain;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Abstractions;
 
@@ -13,7 +13,7 @@ internal class LoyaltyService(
     IRepository<LoyaltyPrograms> programRepository,
     IOfferRepository offerRepository,
     IUserService userService,
-    ITransactionRepository transactionRepository)
+    ITransactionService transactionService)
     : ILoyaltyService
 {
     public async Task<LoyaltyAnalyticsDto> GetUserLoyaltySummaryAsync(int userId)
@@ -23,9 +23,18 @@ internal class LoyaltyService(
             return new LoyaltyAnalyticsDto();
 
         var accountIds = userAccounts.Select(a => a.AccountId).ToList();
+        
+        var totalBonusRate = decimal.Zero;
+        foreach (var id in accountIds)
+        {
+            totalBonusRate += await transactionService.GetCashbackBonusRate(id);
+        }
+
+        totalBonusRate /= 100m;
+        
         var userHistory = await historyRepository.GetByAccountIdsAsync(accountIds);
         var allPrograms = await programRepository.GetAllAsync();
-        var transactions = await transactionRepository.GetByAccountIdsAsync(accountIds);
+        var transactions = await transactionService.GetByAccountIdsAsync(accountIds);
 
         var result = new LoyaltyAnalyticsDto();
         var culture = new CultureInfo("ru-RU");
@@ -61,8 +70,9 @@ internal class LoyaltyService(
             .ToList();
 
         var lastMonthTotalSpend = lastFullMonthTransactions.Sum(t => t.Amount);
-        result.PredictedBenefit3Months = Math.Round(lastMonthTotalSpend * 3 * 0.01m, 2);
-
+        var totalRate = 0.01m + totalBonusRate;
+        result.PredictedBenefit3Months = Math.Round(lastMonthTotalSpend * 3 * totalRate, 2);
+        
         var topCategory = lastFullMonthTransactions
             .GroupBy(t => t.Category)
             .Select(g => new { Category = g.Key, Total = g.Sum(t => t.Amount) })
@@ -72,7 +82,8 @@ internal class LoyaltyService(
         if (topCategory != null)
         {
             result.RecommendedCategoryName = topCategory.Category.MapCategoryToRussian();
-            result.PotentialCategorySavings = Math.Round(topCategory.Total * 0.05m, 2); 
+            var categoryRate = 0.05m + totalBonusRate;
+            result.PotentialCategorySavings = Math.Round(topCategory.Total * categoryRate, 2);
         }
 
         result.TotalPartnerSpend = lastFullMonthTransactions
@@ -95,7 +106,7 @@ internal class LoyaltyService(
         var accountIds = userAccounts.Select(a => a.AccountId).ToList();
 
         var history = await historyRepository.GetByAccountIdsAsync(accountIds);
-        var transactions = await transactionRepository.GetByAccountIdsAsync(accountIds);
+        var transactions = await transactionService.GetByAccountIdsAsync(accountIds);
         var programs = await programRepository.GetAllAsync();
         var offers = await offerRepository.GetPartnersAsync(user.FinancialSegment);
 
@@ -154,28 +165,5 @@ internal class LoyaltyService(
                 );
             })
             .ToList();
-    }
-
-    private decimal CalculateForecast(ICollection<LoyaltyHistory> userHistory)
-    {
-        if (userHistory.Count == 0)
-        {
-            return 0;
-        }
-
-        var recentValues = userHistory
-            .OrderByDescending(h => h.PayoutDate)
-            .Take(3)
-            .Select(h => h.CashbackAmount)
-            .ToList();
-
-        if (recentValues.Count == 0)
-        {
-            return 0;
-        }
-
-        var averageRecent = (decimal)recentValues.Average();
-        
-        return Math.Round(averageRecent * 1.05m, 2);
     }
 }

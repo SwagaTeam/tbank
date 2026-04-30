@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Domain;
+namespace Domain.Enums;
 
 public enum CashbackCurrency
 {

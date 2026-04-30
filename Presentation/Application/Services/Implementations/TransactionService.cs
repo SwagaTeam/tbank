@@ -1,21 +1,31 @@
+using Application.Models;
 using Application.Services.Abstractions;
 using Domain.Entities;
 using Infrastructure.Repositories.Abstractions;
 
 namespace Application.Services.Implementations;
 
-public class TransactionService(ITransactionRepository repository, IAccountRepository accountRepository) 
+public class TransactionService(ITransactionRepository repository) 
     : ITransactionService
 {
+    const decimal BonusStep = 0.5m; 
+    const int DaysInPeriod = 7;
+
+    public async Task<ICollection<TransactionResponse>> GetByAccountIdsAsync(ICollection<int> accountIds)
+    {
+        var result = await repository.GetByAccountIdsAsync(accountIds);
+        return result
+            .Select(x => x.ToResponse())
+            .ToList();
+    }
     /// <summary>
     /// Возвращает максимальное количество транзакций, идущих подряд (день за днем).
     /// Если между транзакциями пропуск более чем в 1 день, счетчик сбрасывается.
     /// </summary>
-    public async Task<int> GetConsecutiveTransactionsCount(int userId)
+    public async Task<int> GetConsecutiveTransactionsCount(int accountId)
     {
-        var accounts = await accountRepository.GetByUserIdAsync(userId);
-        var transactions = await repository.GetByAccountIdsAsync(accounts.Select(x=>x.AccountId));
-        
+        var transactions = await repository.GetByAccountIdsAsync(new List<int> { accountId });
+
         if (transactions.Count == 0)
             return 0;
 
@@ -51,9 +61,15 @@ public class TransactionService(ITransactionRepository repository, IAccountRepos
 
         return maxStreak;
     }
-
-    public int GetConsecutiveTransactionsCount(ICollection<System.Transactions.Transaction> transactions)
+    
+    /// <summary>
+    /// Рассчитывает общую надбавку к кешбэку на основе серии транзакций.
+    /// За каждые полные 7 дней подряд начисляется +0.5%.
+    /// </summary>
+    public async Task<decimal> GetCashbackBonusRate(int accountId)
     {
-        throw new NotImplementedException();
+        var consecutiveDays = await GetConsecutiveTransactionsCount(accountId);
+        var fullPeriods = consecutiveDays / DaysInPeriod;
+        return fullPeriods * BonusStep;
     }
 }

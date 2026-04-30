@@ -1,10 +1,8 @@
-﻿using Domain;
-using Domain.Entities;
+﻿using Domain.Entities;
 
-namespace Application.Services.Abstractions
+namespace Application.Services.Abstractions;
+
+public interface ICrossSellService
 {
-    public interface ICrossSellService
-    {
-        Task<IEnumerable<CrossSellProduct>> GetPersonalizedOffersAsync(int userId);
-    }
+    Task<IEnumerable<CrossSellProduct>> GetPersonalizedOffersAsync(int userId);
 }

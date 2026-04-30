@@ -21,5 +21,5 @@ internal record ShadowPromptContext(
     ICollection<Accounts> CurrentAccount,
     ICollection<LoyaltyHistory> RecentHistory,
     ICollection<LoyaltyPrograms> AvailablePrograms,
-    ICollection<Transaction> Transactions,
+    ICollection<TransactionResponse> Transactions,
     ICollection<Offers> RelevantOffers);

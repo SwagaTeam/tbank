@@ -1,5 +1,6 @@
 ﻿using Application.Services.Abstractions;
 using Domain;
+using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controller;
