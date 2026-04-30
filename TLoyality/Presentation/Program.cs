@@ -10,7 +10,12 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var services = builder.Services;
-        
+
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.AllowAlternateSchemes = true;
+        });
+
         services
             .AddHttpClient()
             .AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection"))
