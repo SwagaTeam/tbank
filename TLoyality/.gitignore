@@ -210,3 +210,6 @@ FakesAssemblies/
 *.sln.iml
 *.env
 
+nginx/ssl/
+
+# check ci
